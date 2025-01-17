@@ -31,7 +31,7 @@ private fun createDynamicKeyboard(chatId: Long): InlineKeyboardMarkup {
     return InlineKeyboardMarkup.create(buttonRows + listOf(addMoreButton, additionalButtons))
 }
 
-private fun setupBot() = bot {
+fun setupBot() = bot {
     token = BOT_TOKEN
 
     dispatch {
