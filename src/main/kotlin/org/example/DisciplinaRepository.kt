@@ -14,7 +14,7 @@ data class DisciplinaInfo(
     val turma: String
 )
 
-class DisciplinaRepository {
+class DisciplinaRepository : AutoCloseable {
     private val connection = DriverManager.getConnection(URL, USER, PASSWORD)
 
     fun buscarDisciplina(id: String): List<DisciplinaInfo> {
@@ -61,6 +61,10 @@ class DisciplinaRepository {
         val matrizDisciplinas = mutableListOf<List<DisciplinaInfo>>()
         for (id in ids) matrizDisciplinas.add(buscarDisciplina(id))
         return matrizDisciplinas
+    }
+
+    override fun close() {
+        connection.close()
     }
 
 }
