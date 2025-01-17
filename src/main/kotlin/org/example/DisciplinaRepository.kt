@@ -1,17 +1,13 @@
 package org.example
 
+import mu.KotlinLogging
 import java.sql.Connection
 import java.sql.DriverManager
 
-object DatabaseConfig {
-    private const val URL = "jdbc:postgresql://localhost:5432/greed"
-    private const val USER = "kd_user"
-    private const val PASSWORD = "pa"
-
-    fun getConnection(): Connection {
-        return DriverManager.getConnection(URL, USER, PASSWORD)
-    }
-}
+private const val URL = "jdbc:postgresql://localhost:5432/greed"
+private val USER = System.getenv("DB_USER")
+private val PASSWORD = System.getenv("DB_PASSWORD")
+private val logger = KotlinLogging.logger {}
 
 data class DisciplinaInfo(
     val horariosID: MutableList<Int>,
@@ -20,10 +16,11 @@ data class DisciplinaInfo(
     val turma: String
 )
 
-class Database {
-    private val connection = DatabaseConfig.getConnection()
+class DisciplinaRepository : AutoCloseable {
+    private val connection = DriverManager.getConnection(URL, USER, PASSWORD)
 
     fun buscarDisciplina(id: String): List<DisciplinaInfo> {
+        logger.info { "Starting search for course $id."}
         val query = """
             SELECT *
             FROM horarios
@@ -60,13 +57,21 @@ class Database {
 
         resultSet.close()
         statement.close()
+        logger.info { "Fetched ${disciplinas.size} entries." }
+        logger.debug { "Entries: ${disciplinas.joinToString(", ")}" }
         return disciplinas
     }
 
     fun escolherTodasDisciplinas(ids: List<String>): List<List<DisciplinaInfo>> {
+        logger.info { "Starting search for courses ${ids.joinToString(", ")}" }
         val matrizDisciplinas = mutableListOf<List<DisciplinaInfo>>()
         for (id in ids) matrizDisciplinas.add(buscarDisciplina(id))
+        logger.info { "Finished fetching entries for courses ${ids.joinToString(", ")}" }
         return matrizDisciplinas
+    }
+
+    override fun close() {
+        connection.close()
     }
 
 }
