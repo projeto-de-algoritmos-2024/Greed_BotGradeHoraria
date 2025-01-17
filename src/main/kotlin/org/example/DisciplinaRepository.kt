@@ -3,15 +3,9 @@ package org.example
 import java.sql.Connection
 import java.sql.DriverManager
 
-object DatabaseConfig {
-    private const val URL = "jdbc:postgresql://localhost:5432/greed"
-    private const val USER = "kd_user"
-    private const val PASSWORD = "pa"
-
-    fun getConnection(): Connection {
-        return DriverManager.getConnection(URL, USER, PASSWORD)
-    }
-}
+private const val URL = "jdbc:postgresql://localhost:5432/greed"
+private val USER = System.getenv("DB_USER")
+private val PASSWORD = System.getenv("DB_PASSWORD")
 
 data class DisciplinaInfo(
     val horariosID: MutableList<Int>,
@@ -20,8 +14,8 @@ data class DisciplinaInfo(
     val turma: String
 )
 
-class Database {
-    private val connection = DatabaseConfig.getConnection()
+class DisciplinaRepository {
+    private val connection = DriverManager.getConnection(URL, USER, PASSWORD)
 
     fun buscarDisciplina(id: String): List<DisciplinaInfo> {
         val query = """
