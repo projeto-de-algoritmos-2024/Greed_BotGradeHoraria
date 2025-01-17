@@ -13,6 +13,7 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     implementation("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.2.0")
+    implementation("org.postgresql:postgresql:42.7.2")
 }
 
 tasks.test {
