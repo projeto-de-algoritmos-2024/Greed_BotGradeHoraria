@@ -1,4 +1,4 @@
-package org.example
+package org.disciplina_bot
 
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot

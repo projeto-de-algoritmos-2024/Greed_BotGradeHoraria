@@ -1,7 +1,6 @@
-package org.example
+package org.disciplina_bot
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
 import java.io.FileNotFoundException
 import java.time.DayOfWeek
 import java.time.Duration

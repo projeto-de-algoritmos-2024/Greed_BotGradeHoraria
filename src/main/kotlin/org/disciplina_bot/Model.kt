@@ -1,4 +1,4 @@
-package org.example
+package org.disciplina_bot
 
 data class Turma(
     val id: String,

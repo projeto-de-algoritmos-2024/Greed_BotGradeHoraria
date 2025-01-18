@@ -1,4 +1,4 @@
-package org.example
+package org.disciplina_bot
 
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.*
