@@ -88,12 +88,19 @@ fun setupBot() : Bot {
 
                     data == "finalize" -> {
                         val buttons = buttonNames[chatId] ?: emptyList()
+
                         val buttonsString =
-                            if (buttons.isEmpty()) "Nenhuma disciplina escolhida." else buttons.joinToString(", ")
+                            if (buttons.isEmpty()) "Nenhuma disciplina escolhida."
+                            else buttons.joinToString(", ")
+
+                        val buttonsList = buttonsString.split(", ").map { it.trim() }
+                        val resultado = DisciplinaRepository().gerarGrade(buttonsList).toString()
+
                         bot.sendMessage(
                             chatId = ChatId.fromId(chatId),
-                            text = "Lista de disciplinas: $buttonsString"
+                            text = "Lista de disciplinas: $resultado"
                         )
+
                         logger.info { "Finalizing timetable generation for $chatId. Selected buttons: $buttonsString" }
                         logger.warn { "Timetable generation not implemented." }
 //                        TODO ADICIONAR A GERAÇÃO DE GRADES AQUI

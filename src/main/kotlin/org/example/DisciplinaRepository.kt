@@ -1,7 +1,6 @@
 package org.example
 
 import mu.KotlinLogging
-import java.sql.Connection
 import java.sql.DriverManager
 
 private const val URL = "jdbc:postgresql://localhost:5432/greed"
@@ -19,12 +18,31 @@ data class DisciplinaInfo(
 class DisciplinaRepository : AutoCloseable {
     private val connection = DriverManager.getConnection(URL, USER, PASSWORD)
 
+    fun gerarGrade(ids: List<String>): List<String> {
+        val query = """
+            SELECT * FROM gerar_grades_horarias(?);
+        """
+        val statement = connection.prepareStatement(query)
+        statement.setArray(1, connection.createArrayOf("TEXT", ids.toTypedArray()))
+        val resultSet = statement.executeQuery()
+        val resultados = mutableListOf<String>()
+        while (resultSet.next()) {
+            val disciplinaEscolhida = resultSet.getString("disciplina_escolhida")
+            val turmaEscolhida = resultSet.getString("turma_escolhida")
+
+            resultados.add("$disciplinaEscolhida-$turmaEscolhida")
+        }
+        resultSet.close()
+        statement.close()
+        return resultados
+    }
+
     fun buscarDisciplina(id: String): List<DisciplinaInfo> {
         logger.info { "Starting search for course $id."}
         val query = """
             SELECT *
             FROM horarios
-            WHERE codigodisciplina = ?
+            WHERE codigo_disciplina = ?
         """
 
         val statement = connection.prepareStatement(query)
@@ -36,7 +54,7 @@ class DisciplinaRepository : AutoCloseable {
         while (resultSet.next()) {
             val horarioID = resultSet.getInt("id")
             val horarioSTR = resultSet.getString("codigo")
-            val disciplinaOfertada = resultSet.getString("codigodisciplina")
+            val disciplinaOfertada = resultSet.getString("codigo_disciplina")
             val turma = resultSet.getString("turma")
 
             val existente = disciplinas.find { it.codigodisciplina == disciplinaOfertada && it.turma == turma }
