@@ -19,9 +19,11 @@ object HorariosView : Table("horarios") {
 
 class DisciplinaRepository {
     init {
+        // TODO: remover, isso só deve acontecer uma vez
         Database.connect(URL, "com.impossibl.postgres.jdbc.PGDriver", USER, PASSWORD)
     }
 
+    // TODO: adicionar um de beuscar várias disciplinas
     fun buscarDisciplina(id: String): Disciplina {
         logger.info { "Starting search for course $id."}
         val turmas = mutableMapOf<String, MutableList<BlocoHorario>>()
@@ -45,7 +47,14 @@ class DisciplinaRepository {
             throw NoSuchElementException("No data found for course $id")
         }
 
-        val disciplina = Disciplina(id, turmas.map { Turma(it.key, mergeBlocks(it.value)) })
+        val disciplina = Disciplina(id, turmas.map { Turma(it.key, mergeBlocks(it.value), ) })
+
+        for (turma in disciplina.turmas) {
+            turma.disciplina = disciplina
+            for (horario in turma.horarios) {
+                horario.turma = turma
+            }
+        }
 
         logger.info { "Fetched ${disciplina.turmas.size} sections, ${disciplina.turmas.flatMap { it.horarios }.size} blocks, for course ${disciplina.id}." }
         logger.info { "Sections: ${disciplina.turmas}, blocks ${disciplina.turmas.map { it.id to it.horarios}}."}

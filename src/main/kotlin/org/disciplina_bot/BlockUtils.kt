@@ -1,26 +1,12 @@
 package org.disciplina_bot
 
-import kotlinx.serialization.json.Json
-import java.io.FileNotFoundException
-import java.time.DayOfWeek
 import java.time.Duration
-import java.time.LocalTime
 import java.util.ArrayDeque
 
-data class BlocoHorario (
-    val day: DayOfWeek,
-    val start: LocalTime,
-    val end: LocalTime,
-) {
-    val normalizedEnd : Long
-    get() {
-        val dayIndex = day.ordinal.toLong()
-        val startMinutes = end.toSecondOfDay() / 60;
-        return dayIndex * 1440 + startMinutes
-    }
-}
-
 private fun mergeAdjacent(blocoA: BlocoHorario, blocoB: BlocoHorario) : BlocoHorario? {
+    // TODO: fazer checagem com require
+    if (blocoA.turma != blocoB.turma) throw IllegalArgumentException("Can't merge blocks from different sections.")
+
     if (blocoA.day != blocoB.day)
         return null
 

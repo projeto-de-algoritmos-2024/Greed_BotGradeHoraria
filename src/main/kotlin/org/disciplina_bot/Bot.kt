@@ -16,6 +16,7 @@ private val logger = KotlinLogging.logger {}
 private val buttonNames = mutableMapOf<Long, MutableList<String>>()
 private val renamingButton = mutableMapOf<Long, Int>()
 private val BOT_TOKEN = System.getenv("BOT_TOKEN")
+private val repository = DisciplinaRepository()
 
 private fun createDynamicKeyboard(chatId: Long): InlineKeyboardMarkup {
 
@@ -32,6 +33,24 @@ private fun createDynamicKeyboard(chatId: Long): InlineKeyboardMarkup {
     val addMoreButton = listOf(InlineKeyboardButton.CallbackData("Adicionar Disciplina", "add_button"))
 
     return InlineKeyboardMarkup.create(buttonRows + listOf(addMoreButton, additionalButtons))
+}
+
+private fun generateCombinations(courses: List<Disciplina>) : List<BlocoHorario> {
+    val blocks = courses
+        .flatMap { it.turmas }
+        .flatMap { it.horarios }
+        .sortedBy { it.normalizedEnd }
+
+    val selectedBlocks = mutableListOf<BlocoHorario>()
+
+    for (bloco in blocks) {
+        if (selectedBlocks.isEmpty() || bloco.normalizedStart >= selectedBlocks.last().normalizedStart ) {
+            selectedBlocks.add(bloco)
+        }
+    }
+
+    return selectedBlocks
+
 }
 
 fun setupBot() : Bot {
@@ -87,15 +106,31 @@ fun setupBot() : Bot {
                     }
 
                     data == "finalize" -> {
-                        val buttonNames = buttonNames[chatId] ?: emptyList()
+                        val idDisciplinas = buttonNames[chatId] ?: emptyList()
                         val buttonsString =
-                            if (buttonNames.isEmpty()) "Nenhuma disciplina escolhida." else buttonNames.joinToString(", ")
+                            if (idDisciplinas.isEmpty()) "Nenhuma disciplina escolhida." else idDisciplinas.joinToString(", ")
                         bot.sendMessage(
                             chatId = ChatId.fromId(chatId),
                             text = "Lista de disciplinas: $buttonsString"
                         )
                         logger.info { "Finalizing timetable generation for $chatId. Selected buttons: $buttonsString" }
                         logger.warn { "Timetable generation not implemented." }
+
+                        try {
+                            val disciplinas = idDisciplinas.map {repository.buscarDisciplina(it)}
+                            val blocks = generateCombinations(disciplinas)
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = "Lista de blocos: $blocks"
+                            )
+                        } catch (e: IllegalArgumentException) {
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = "Houve um erro ao processar as disciplinas: ${e.message}"
+                            )
+                            logger.error { "Error while processing courses: $e" }
+                        }
+
 //                        TODO ADICIONAR A GERAÇÃO DE GRADES AQUI
                     }
 
