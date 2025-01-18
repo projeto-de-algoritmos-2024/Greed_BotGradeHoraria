@@ -1,79 +1,57 @@
 package org.example
 
 import mu.KotlinLogging
-import java.sql.Connection
-import java.sql.DriverManager
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.transaction
 
-private const val URL = "jdbc:postgresql://localhost:5432/greed"
+private const val URL = "jdbc:pgsql://localhost:5432/greed"
 private val USER = System.getenv("DB_USER")
 private val PASSWORD = System.getenv("DB_PASSWORD")
 private val logger = KotlinLogging.logger {}
 
-data class DisciplinaInfo(
-    val horariosID: MutableList<Int>,
-    val horariosSTR: MutableList<String>,
-    val codigodisciplina: String,
-    val turma: String
-)
+object HorariosView : Table("horarios") {
+    val id = integer("id")
+    // TODO: acertar tamanhos
+    val codigo = varchar("codigo", 255)
+    val codigodisciplina = varchar("codigodisciplina", 255)
+    val turma = varchar("turma", 255)
+}
 
-class DisciplinaRepository : AutoCloseable {
-    private val connection = DriverManager.getConnection(URL, USER, PASSWORD)
+class DisciplinaRepository {
+    init {
+        Database.connect(URL, "com.impossibl.postgres.jdbc.PGDriver", USER, PASSWORD)
+    }
 
-    fun buscarDisciplina(id: String): List<DisciplinaInfo> {
+    fun buscarDisciplina(id: String): Disciplina {
         logger.info { "Starting search for course $id."}
-        val query = """
-            SELECT *
-            FROM horarios
-            WHERE codigodisciplina = ?
-        """
+        val turmas = mutableMapOf<String, MutableList<BlocoHorario>>()
 
-        val statement = connection.prepareStatement(query)
-        statement.setString(1, id)
+        transaction {
+            addLogger(StdOutSqlLogger)
 
-        val resultSet = statement.executeQuery()
-
-        val disciplinas = mutableListOf<DisciplinaInfo>()
-        while (resultSet.next()) {
-            val horarioID = resultSet.getInt("id")
-            val horarioSTR = resultSet.getString("codigo")
-            val disciplinaOfertada = resultSet.getString("codigodisciplina")
-            val turma = resultSet.getString("turma")
-
-            val existente = disciplinas.find { it.codigodisciplina == disciplinaOfertada && it.turma == turma }
-            if (existente != null) {
-                existente.horariosID.add(horarioID)
-                existente.horariosSTR.add(horarioSTR)
-            } else {
-                disciplinas.add(
-                    DisciplinaInfo(
-                        horariosID = mutableListOf(horarioID),
-                        horariosSTR = mutableListOf(horarioSTR),
-                        codigodisciplina = disciplinaOfertada,
-                        turma = turma
-                    )
-                )
-            }
+            HorariosView
+                .selectAll()
+                .where { HorariosView.codigodisciplina eq id}
+                .forEach {row ->
+                    val bloco = convertCode(row[HorariosView.codigo])
+                    val idTurma = row[HorariosView.turma]
+                    val turma = turmas.getOrPut(idTurma) { mutableListOf() }
+                    turma += bloco
+                }
         }
 
-        resultSet.close()
-        statement.close()
-        logger.info { "Fetched ${disciplinas.size} entries." }
-        logger.debug { "Entries: ${disciplinas.joinToString(", ")}" }
-        return disciplinas
-    }
+        if (turmas.isEmpty()) {
+            logger.error { "No entries found for course $id" }
+            throw NoSuchElementException("No data found for course $id")
+        }
 
-    fun escolherTodasDisciplinas(ids: List<String>): List<List<DisciplinaInfo>> {
-        logger.info { "Starting search for courses ${ids.joinToString(", ")}" }
-        val matrizDisciplinas = mutableListOf<List<DisciplinaInfo>>()
-        for (id in ids) matrizDisciplinas.add(buscarDisciplina(id))
-        logger.info { "Finished fetching entries for courses ${ids.joinToString(", ")}" }
-        return matrizDisciplinas
-    }
+        val disciplina = Disciplina(id, turmas.map { Turma(it.key, mergeBlocks(it.value)) })
 
-    override fun close() {
-        connection.close()
-    }
+        logger.info { "Fetched ${disciplina.turmas.size} sections, ${disciplina.turmas.flatMap { it.horarios }.size} blocks, for course ${disciplina.id}." }
+        logger.info { "Sections: ${disciplina.turmas}, blocks ${disciplina.turmas.map { it.id to it.horarios}}."}
 
+        return disciplina
+    }
 }
 
 

@@ -87,9 +87,9 @@ fun setupBot() : Bot {
                     }
 
                     data == "finalize" -> {
-                        val buttons = buttonNames[chatId] ?: emptyList()
+                        val buttonNames = buttonNames[chatId] ?: emptyList()
                         val buttonsString =
-                            if (buttons.isEmpty()) "Nenhuma disciplina escolhida." else buttons.joinToString(", ")
+                            if (buttonNames.isEmpty()) "Nenhuma disciplina escolhida." else buttonNames.joinToString(", ")
                         bot.sendMessage(
                             chatId = ChatId.fromId(chatId),
                             text = "Lista de disciplinas: $buttonsString"
