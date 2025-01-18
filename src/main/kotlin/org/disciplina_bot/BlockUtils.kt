@@ -5,7 +5,7 @@ import java.util.ArrayDeque
 
 private fun mergeAdjacent(blocoA: BlocoHorario, blocoB: BlocoHorario) : BlocoHorario? {
     // TODO: fazer checagem com require
-    if (blocoA.turma != blocoB.turma) throw IllegalArgumentException("Can't merge blocks from different sections.")
+//    if (blocoA.turma != blocoB.turma) throw IllegalArgumentException("Can't merge blocks from different sections.")
 
     if (blocoA.day != blocoB.day)
         return null

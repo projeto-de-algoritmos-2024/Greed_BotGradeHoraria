@@ -26,7 +26,7 @@ class DisciplinaRepository {
     // TODO: adicionar um de beuscar várias disciplinas
     fun buscarDisciplina(id: String): Disciplina {
         logger.info { "Starting search for course $id."}
-        val turmas = mutableMapOf<String, MutableList<BlocoHorario>>()
+        val blockById = mutableMapOf<String, MutableList<BlocoHorario>>()
 
         transaction {
             addLogger(StdOutSqlLogger)
@@ -37,22 +37,21 @@ class DisciplinaRepository {
                 .forEach {row ->
                     val bloco = convertCode(row[HorariosView.codigo])
                     val idTurma = row[HorariosView.turma]
-                    val turma = turmas.getOrPut(idTurma) { mutableListOf() }
+                    val turma = blockById.getOrPut(idTurma) { mutableListOf() }
                     turma += bloco
                 }
         }
 
-        if (turmas.isEmpty()) {
+        if (blockById.isEmpty()) {
             logger.error { "No entries found for course $id" }
             throw NoSuchElementException("No data found for course $id")
         }
 
-        val disciplina = Disciplina(id, turmas.map { Turma(it.key, mergeBlocks(it.value), ) })
-
+        val disciplina = Disciplina(id, blockById.map { Turma(it.key, mergeBlocks(it.value)) } )
         for (turma in disciplina.turmas) {
             turma.disciplina = disciplina
-            for (horario in turma.horarios) {
-                horario.turma = turma
+            for (bloco in turma.horarios) {
+                bloco.turma = turma
             }
         }
 
