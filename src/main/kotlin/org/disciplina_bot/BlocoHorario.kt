@@ -7,23 +7,17 @@ import java.time.Duration
 import java.time.LocalTime
 import java.util.ArrayDeque
 
-private fun getTimePair(start: String, end: String)
-    = Pair(LocalTime.parse(start), LocalTime.parse(end))
-
-private val conversionTable = getConversionTable()
-
-fun getConversionTable() : Map<String, Pair<LocalTime, LocalTime>> {
-    val jsonTable = object {}.javaClass.getResource("/timetable.json")?.readText() ?: throw FileNotFoundException("Could not find timetable file")
-    val rawTable: Map<String, List<String>> = Json.decodeFromString(jsonTable)
-    return rawTable.mapValues { (_, times) ->
-       getTimePair(times[0], times[1])
+data class BlocoHorario (
+    val day: DayOfWeek,
+    val start: LocalTime,
+    val end: LocalTime,
+) {
+    val normalizedEnd : Long
+    get() {
+        val dayIndex = day.ordinal.toLong()
+        val startMinutes = end.toSecondOfDay() / 60;
+        return dayIndex * 1440 + startMinutes
     }
-}
-
-fun convertCode(code: String) : BlocoHorario {
-    val day = DayOfWeek.of(code[0].digitToInt()-1)
-    val time = conversionTable[code.substring(1)] ?: throw IllegalArgumentException("Wrong code format: $code")
-    return BlocoHorario(day, time.first, time.second)
 }
 
 private fun mergeAdjacent(blocoA: BlocoHorario, blocoB: BlocoHorario) : BlocoHorario? {
@@ -59,9 +53,3 @@ fun mergeBlocks(blocks: List<BlocoHorario>) : List<BlocoHorario> {
 
     return stack.toList().reversed()
 }
-
-data class BlocoHorario (
-    val day: DayOfWeek,
-    val start: LocalTime,
-    val end: LocalTime,
-)
