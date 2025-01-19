@@ -1,12 +1,11 @@
 package org.disciplina_bot
 
 import mu.KotlinLogging
+import java.time.DayOfWeek
 
 
 private val logger = KotlinLogging.logger {}
+
 fun main() {
-    println(DisciplinaRepository().buscarDisciplina("FGA0214"))
-    logger.info { "Starting bot." }
     setupBot().startPolling()
-    logger.info { "Starting bot polling." }
 }

@@ -9,14 +9,18 @@ import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
+import de.m3y.kformat.table
 import mu.KotlinLogging
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.*
 
 
 private val logger = KotlinLogging.logger {}
 private val buttonNames = mutableMapOf<Long, MutableList<String>>()
 private val renamingButton = mutableMapOf<Long, Int>()
 private val BOT_TOKEN = System.getenv("BOT_TOKEN")
-private val repository = DisciplinaRepository()
+val repository = DisciplinaRepository()
 
 private fun createDynamicKeyboard(chatId: Long): InlineKeyboardMarkup {
 
@@ -33,24 +37,6 @@ private fun createDynamicKeyboard(chatId: Long): InlineKeyboardMarkup {
     val addMoreButton = listOf(InlineKeyboardButton.CallbackData("Adicionar Disciplina", "add_button"))
 
     return InlineKeyboardMarkup.create(buttonRows + listOf(addMoreButton, additionalButtons))
-}
-
-private fun generateCombinations(courses: List<Disciplina>) : List<BlocoHorario> {
-    val blocks = courses
-        .flatMap { it.turmas }
-        .flatMap { it.horarios }
-        .sortedBy { it.normalizedEnd }
-
-    val selectedBlocks = mutableListOf<BlocoHorario>()
-
-    for (bloco in blocks) {
-        if (selectedBlocks.isEmpty() || bloco.normalizedStart >= selectedBlocks.last().normalizedStart ) {
-            selectedBlocks.add(bloco)
-        }
-    }
-
-    return selectedBlocks
-
 }
 
 fun setupBot() : Bot {
@@ -114,24 +100,29 @@ fun setupBot() : Bot {
                             text = "Lista de disciplinas: $buttonsString"
                         )
                         logger.info { "Finalizing timetable generation for $chatId. Selected buttons: $buttonsString" }
-                        logger.warn { "Timetable generation not implemented." }
-
                         try {
-                            val disciplinas = idDisciplinas.map {repository.buscarDisciplina(it)}
-                            val blocks = generateCombinations(disciplinas)
+                            val disciplinas = idDisciplinas.map(repository::buscarDisciplina)
+                            val combinations = generateCombinations(disciplinas)
+                                .mapIndexed { idx, comb ->
+                                    val turmas =
+                                        comb.map { it.turma.disciplina.id to it.turma.id }
+                                            .distinct()
+                                            .joinToString("\n") { "${it.first} - turma ${it.second}" }
+                                    "Grade $idx:\nTurmas:\n${turmas}\n${getScheduleAsString(comb)}"
+                                }
+                                .joinToString("")
                             bot.sendMessage(
                                 chatId = ChatId.fromId(chatId),
-                                text = "Lista de blocos: $blocks"
+                                text = combinations
                             )
-                        } catch (e: IllegalArgumentException) {
+                        } catch (e: NoSuchElementException) {
                             bot.sendMessage(
                                 chatId = ChatId.fromId(chatId),
-                                text = "Houve um erro ao processar as disciplinas: ${e.message}"
+                                text = "Houve um erro ao buscar as disciplinas: ${e.message}",
                             )
-                            logger.error { "Error while processing courses: $e" }
+                            logger.error { e }
                         }
 
-//                        TODO ADICIONAR A GERAÇÃO DE GRADES AQUI
                     }
 
                     data.startsWith("rename_button_") -> {

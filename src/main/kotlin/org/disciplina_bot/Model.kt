@@ -22,7 +22,11 @@ data class BlocoHorario (
             val startMinutes = start.toSecondOfDay() / 60;
             return dayIndex * 1440 + startMinutes
         }
+
     override fun toString() = "BlocoHorario(day=$day, start=$start, end=$end)"
+
+    infix fun intersects(other: BlocoHorario)
+        = this.start <= other.end && other.start <= this.end
 }
 
 data class Turma(

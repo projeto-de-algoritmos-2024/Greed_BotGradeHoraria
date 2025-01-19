@@ -25,6 +25,7 @@ dependencies {
     implementation("org.jetbrains.exposed","exposed-core", exposedVersion)
     implementation("org.jetbrains.exposed","exposed-dao", exposedVersion)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation("de.m3y.kformat", "kformat", "0.11")
 }
 
 tasks.test {
