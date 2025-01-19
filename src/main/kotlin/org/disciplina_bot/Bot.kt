@@ -1,4 +1,4 @@
-package org.example
+package org.disciplina_bot
 
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.bot
@@ -9,13 +9,18 @@ import com.github.kotlintelegrambot.dispatcher.text
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.InlineKeyboardMarkup
 import com.github.kotlintelegrambot.entities.keyboard.InlineKeyboardButton
+import de.m3y.kformat.table
 import mu.KotlinLogging
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.*
 
 
 private val logger = KotlinLogging.logger {}
 private val buttonNames = mutableMapOf<Long, MutableList<String>>()
 private val renamingButton = mutableMapOf<Long, Int>()
 private val BOT_TOKEN = System.getenv("BOT_TOKEN")
+val repository = DisciplinaRepository()
 
 private fun createDynamicKeyboard(chatId: Long): InlineKeyboardMarkup {
 
@@ -87,16 +92,37 @@ fun setupBot() : Bot {
                     }
 
                     data == "finalize" -> {
-                        val buttons = buttonNames[chatId] ?: emptyList()
+                        val idDisciplinas = buttonNames[chatId] ?: emptyList()
                         val buttonsString =
-                            if (buttons.isEmpty()) "Nenhuma disciplina escolhida." else buttons.joinToString(", ")
+                            if (idDisciplinas.isEmpty()) "Nenhuma disciplina escolhida." else idDisciplinas.joinToString(", ")
                         bot.sendMessage(
                             chatId = ChatId.fromId(chatId),
                             text = "Lista de disciplinas: $buttonsString"
                         )
                         logger.info { "Finalizing timetable generation for $chatId. Selected buttons: $buttonsString" }
-                        logger.warn { "Timetable generation not implemented." }
-//                        TODO ADICIONAR A GERAÇÃO DE GRADES AQUI
+                        try {
+                            val disciplinas = idDisciplinas.map(repository::buscarDisciplina)
+                            val combinations = generateCombinations(disciplinas)
+                                .mapIndexed { idx, comb ->
+                                    val turmas =
+                                        comb.map { it.turma.disciplina.id to it.turma.id }
+                                            .distinct()
+                                            .joinToString("\n") { "${it.first} - turma ${it.second}" }
+                                    "Grade $idx:\nTurmas:\n${turmas}\n${getScheduleAsString(comb)}"
+                                }
+                                .joinToString("")
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = combinations
+                            )
+                        } catch (e: NoSuchElementException) {
+                            bot.sendMessage(
+                                chatId = ChatId.fromId(chatId),
+                                text = "Houve um erro ao buscar as disciplinas: ${e.message}",
+                            )
+                            logger.error { e }
+                        }
+
                     }
 
                     data.startsWith("rename_button_") -> {
