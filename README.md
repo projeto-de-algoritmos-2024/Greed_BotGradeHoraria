@@ -36,7 +36,7 @@
 
 Este projeto consiste em um bot para o Telegram que gera todas as possíveis grades horárias, verificando e resolvendo conflitos de agendamento de intervalos (interval scheduling).
 
-> Para ver o vídeo da apresentação clique [aqui]().
+> Para ver o vídeo da apresentação clique [aqui](https://youtu.be/dBowU2K6534).
 
 ## Screenshots
 <div align="center"><img src= "https://raw.githubusercontent.com/projeto-de-algoritmos-2024/Greed_BotGradeHoraria/refs/heads/main/images/inicia.png?raw=true"/></div>
@@ -90,7 +90,7 @@ Após rodar a main basta acessar o link do bot disponível em https://web.telegr
 
 ### Apresentação
 
-> Para ver o video de apresentação clique [aqui]().
+> Para ver o video de apresentação clique [aqui](https://youtu.be/dBowU2K6534).
 
 
 

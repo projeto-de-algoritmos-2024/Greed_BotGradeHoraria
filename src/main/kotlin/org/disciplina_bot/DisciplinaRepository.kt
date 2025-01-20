@@ -13,7 +13,7 @@ object HorariosView : Table("horarios") {
     val id = integer("id")
     // TODO: acertar tamanhos
     val codigo = varchar("codigo", 255)
-    val codigodisciplina = varchar("codigodisciplina", 255)
+    val codigodisciplina = varchar("codigo_disciplina", 255)
     val turma = varchar("turma", 255)
 }
 
